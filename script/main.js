@@ -1,13 +1,23 @@
-
-
-
-const  leftMenu = document.querySelector('.left-menu'),
-       hamburger=document.querySelector('.hamburger'),
-       tvShowList=document.querySelector('.tv-shows__list'),
-       modal=document.querySelector('.modal');
 const IMG_URL='https://image.tmdb.org/t/p/w185_and_h278_bestv2';
+const API_KEY = '977b582b24be1c248ad9db0b6852d105';
+const SERVER=`https://api.themoviedb.org/3`;
 
 
+
+let leftMenu = document.querySelector('.left-menu'),
+    hamburger = document.querySelector('.hamburger'),
+    tvShowList = document.querySelector('.tv-shows__list'),
+    modal = document.querySelector('.modal'),
+    tvShows = document.querySelector('.tv-shows'),
+    tvCardImg = document.querySelector('.tv-card__img'),
+    modalTitle = document.querySelector('.modal__title'),
+    genresList = document.querySelector('.genres-list'),
+    rating = document.querySelector('.rating'),
+    description = document.querySelector('.description'),
+    modalLink = document.querySelector('.modal__link');
+
+const loading=document.createElement('div');
+loading.className='loading';
 
 
 const DBService=class{
@@ -16,13 +26,23 @@ const DBService=class{
         if (res.ok){
             return res.json();
         }else{
-            throw new Error(`Не удалось получить данные по адресу ${url}`)
+            throw new Error(`Не удалось получить данные по адресу ${url}`);
         }
     }
     getTestData= async ()=>{
-        return await this.getData('test.json')
+        return await this.getData('test.json');
     }
+    getTestCard=()=>{
+        return this.getData('card.json');
+    }
+    getSearchResult=(query)=>{
+        return this.getData(`${SERVER}/search/tv?api_key=${API_KEY}&query=${query}&language=ru-Ru`);
+
+    }
+
 };
+
+console.log(new DBService().getSearchResult(' ПАПА'));
 
 
 const renderCard=(response)=>{
@@ -36,27 +56,28 @@ const renderCard=(response)=>{
               } = item;
 
         const posterIMG = poster ? IMG_URL+poster:"./img/no-poster.jpg";
-        const backdropIMG="";
-        const votElem="";
+        const backdropIMG= backdrop?IMG_URL+backdrop:'';
+        const voteElem=vote ?  `<span class="tv-card__vote">${vote}</span>`:" ";
         const card = document.createElement('li');
         card.className = 'tv-shows__item';
         card.innerHTML = `
                    <a href="#" class="tv-card">
-                        <span class="tv-card__vote">${vote}</span>
+                        ${voteElem}
                         <img class="tv-card__img"
                              src="${posterIMG}"
-                             data-backdrop="${IMG_URL+backdrop}"
+                             data-backdrop="${backdropIMG}"
                              alt="${title}">
                         <h4 class="tv-card__head">${title}</h4>
                     </a>                    
         `;
-
+        loading.remove();
         tvShowList.append(card);
     });
 };
-
-new DBService().getTestData().then(renderCard);
-
+{
+     tvShows.append(loading)
+    new DBService().getTestData().then(renderCard);
+}
 
 
 // открытие- закрытие меню
@@ -89,8 +110,21 @@ document.addEventListener('click',(event)=>{
      const target = event.target;
      const card =target.closest('.tv-card');
      if(card){
-         document.body.style.overflow='hidden';
-         modal.classList.remove('hide');
+          new DBService().getTestCard()
+             .then(data=>{
+                 console.log(data);
+                 tvCardImg.src = IMG_URL + data.poster_path;
+                 modalTitle.textContent = data.name;
+      // genresList.innerHTML= data.genres.reduce((acc,item)=>`${acc}  <li>${item.name}</li`,'');
+                 genresList.textContent='';
+                   for (const item of data.genres){
+                       genresList.innerHTML +=  `<li>${item.name}</li`
+                   }
+                   rating
+             }).then(()=>{
+              document.body.style.overflow='hidden';
+              modal.classList.remove('hide');
+          })
      }
 
  });
