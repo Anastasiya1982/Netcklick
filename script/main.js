@@ -16,7 +16,9 @@ let leftMenu = document.querySelector('.left-menu'),
     description = document.querySelector('.description'),
     modalLink = document.querySelector('.modal__link'),
     searchForm=document.querySelector('.search__form'),
-    searchFormInput=document.querySelector('.search__form-input');
+    searchFormInput=document.querySelector('.search__form-input')
+    preloader = document.querySelector('.preloader'),
+    dropdown=document.querySelectorAll('.dropdown');
 
 const loading=document.createElement('div');
 loading.className='loading';
@@ -96,16 +98,24 @@ searchForm.addEventListener('submit', (event)=>{
 
 
 // открытие- закрытие меню
+const closeDropdown=()=>{
+    dropdown.forEach(item=>{
+       item.classList.remove('active');
+    })
+}
+
 hamburger.addEventListener('click',()=>{
    leftMenu.classList.toggle('openMenu');
    hamburger.classList.toggle('open');
+   closeDropdown();
 });
 document.addEventListener('click',(event)=>{
     const target=event.target;
     if(!target.closest('.left-menu')){
         leftMenu.classList.remove('openMenu');
         hamburger.classList.remove('open');
-    }
+        closeDropdown();
+        }
 });
 
  leftMenu.addEventListener('click',(event)=>{
@@ -126,10 +136,12 @@ document.addEventListener('click',(event)=>{
      const target = event.target;
      const card =target.closest('.tv-card');
      if(card){
+         preloader.style.display="block";
           new DBService().getTvShow(card.id)
              .then(data=>{
                  console.log(data);
                  tvCardImg.src = IMG_URL + data.poster_path;
+                 tvCardImg.alt=data.name;
                  modalTitle.textContent = data.name;
       // genresList.innerHTML= data.genres.reduce((acc,item)=>`${acc}  <li>${item.name}</li`,'');
                  genresList.textContent='';
@@ -143,6 +155,9 @@ document.addEventListener('click',(event)=>{
              }).then(()=>{
               document.body.style.overflow='hidden';
               modal.classList.remove('hide');
+          })
+          .finally(()=>{
+              preloader.style.display='none';
           })
      }
 
