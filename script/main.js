@@ -1,7 +1,4 @@
 const IMG_URL='https://image.tmdb.org/t/p/w185_and_h278_bestv2';
-const API_KEY = '977b582b24be1c248ad9db0b6852d105';
-const SERVER=`https://api.themoviedb.org/3`;
-
 
 
 let leftMenu = document.querySelector('.left-menu'),
@@ -15,12 +12,19 @@ let leftMenu = document.querySelector('.left-menu'),
     rating = document.querySelector('.rating'),
     description = document.querySelector('.description'),
     modalLink = document.querySelector('.modal__link');
+    searchForm=document.querySelector('search__form');
+    searchFormInput=document.querySelector('search__form-input');
 
 const loading=document.createElement('div');
 loading.className='loading';
 
 
 const DBService=class{
+    constructor() {
+        this.SERVER=`https://api.themoviedb.org/3`;
+        this.API_KEY = '977b582b24be1c248ad9db0b6852d105';
+    }
+
     getData = async (url)=>{
         const res = await fetch(url);
         if (res.ok){
@@ -29,17 +33,16 @@ const DBService=class{
             throw new Error(`Не удалось получить данные по адресу ${url}`);
         }
     }
-    getTestData= async ()=>{
-        return await this.getData('test.json');
+    getTestData=  ()=>{
+        return this.getData('test.json');
     }
     getTestCard=()=>{
         return this.getData('card.json');
     }
     getSearchResult=(query)=>{
-        return this.getData(`${SERVER}/search/tv?api_key=${API_KEY}&query=${query}&language=ru-Ru`);
-
+        return this.getData(this.SERVER+`/search/tv?api_key=`+this.API_KEY+
+        `&language=ru-Ru&query=`+query);
     }
-
 };
 
 console.log(new DBService().getSearchResult(' ПАПА'));
@@ -74,10 +77,12 @@ const renderCard=(response)=>{
         tvShowList.append(card);
     });
 };
-{
-     tvShows.append(loading)
-    new DBService().getTestData().then(renderCard);
-}
+searchForm.addEventListener('submit',(event)=>{
+    event.preventDefault();
+    const value=searchFormInput.value;
+    tvShows.append(loading)
+    new DBService().getSearchResult(value).then(renderCard);
+});
 
 
 // открытие- закрытие меню
@@ -121,7 +126,8 @@ document.addEventListener('click',(event)=>{
                        genresList.innerHTML +=  `<li>${item.name}</li`
                    }
                    rating
-             }).then(()=>{
+             })
+              .then(()=>{
               document.body.style.overflow='hidden';
               modal.classList.remove('hide');
           })
