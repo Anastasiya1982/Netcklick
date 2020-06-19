@@ -1,4 +1,7 @@
 const IMG_URL='https://image.tmdb.org/t/p/w185_and_h278_bestv2';
+SERVER=`https://api.themoviedb.org/3`;
+API_KEY = '977b582b24be1c248ad9db0b6852d105';
+
 
 
 let leftMenu = document.querySelector('.left-menu'),
@@ -20,10 +23,6 @@ loading.className='loading';
 
 
 const DBService=class{
-    constructor() {
-        this.SERVER=`https://api.themoviedb.org/3`;
-        this.API_KEY = '977b582b24be1c248ad9db0b6852d105';
-    }
 
     getData = async (url)=>{
         const res = await fetch(url);
@@ -33,16 +32,17 @@ const DBService=class{
             throw new Error(`Не удалось получить данные по адресу ${url}`);
         }
     }
-    getTestData=  ()=>{
-        return this.getData('test.json');
+    getTestData= async ()=>{
+        return await this.getData('test.json');
     }
     getTestCard=()=>{
         return this.getData('card.json');
     }
     getSearchResult=(query)=>{
-        return this.getData(this.SERVER+`/search/tv?api_key=`+this.API_KEY+
-        `&language=ru-Ru&query=`+query);
+        return this.getData(`${SERVER}/search/tv?api_key=${API_KEY}&query=${query}&language=ru-Ru`);
+
     }
+
 };
 
 console.log(new DBService().getSearchResult(' ПАПА'));
@@ -77,12 +77,14 @@ const renderCard=(response)=>{
         tvShowList.append(card);
     });
 };
-searchForm.addEventListener('submit',(event)=>{
-    event.preventDefault();
-    const value=searchFormInput.value;
-    tvShows.append(loading)
-    new DBService().getSearchResult(value).then(renderCard);
-});
+searchForm.addEventListener('submit',event=>{
+    event.preventDefault()
+    console.log(event)
+})
+{
+     tvShows.append(loading)
+    new DBService().getTestData().then(renderCard);
+}
 
 
 // открытие- закрытие меню
@@ -126,8 +128,7 @@ document.addEventListener('click',(event)=>{
                        genresList.innerHTML +=  `<li>${item.name}</li`
                    }
                    rating
-             })
-              .then(()=>{
+             }).then(()=>{
               document.body.style.overflow='hidden';
               modal.classList.remove('hide');
           })
