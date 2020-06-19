@@ -18,7 +18,11 @@ let leftMenu = document.querySelector('.left-menu'),
     searchForm=document.querySelector('.search__form'),
     searchFormInput=document.querySelector('.search__form-input')
     preloader = document.querySelector('.preloader'),
-    dropdown=document.querySelectorAll('.dropdown');
+    dropdown=document.querySelectorAll('.dropdown'),
+    tvShowsHead=document.querySelector('.tv-shows__head'),
+    posterWrapper=document.querySelector('.poster__wrapper'),
+    modalContent=document.querySelector('.modal__content');
+    
 
 const loading=document.createElement('div');
 loading.className='loading';
@@ -47,15 +51,33 @@ const DBService=class{
     getTvShow=id=>{
         return this.getData(`${SERVER}/tv/${id}?api_key=${API_KEY}&language=ru-RU`);
     }
+    getTopRated=()=>{
+          return this.getData(`${SERVER}/tv/top_rated?api_key=${API_KEY}&language=ru-RU&page=1`);
+    }
+    getPopular=()=>{
+        return this.getData(`${SERVER}/tv/popular?api_key=${API_KEY}&language=ru-RU&page=1`);
+ }
+   getToday=()=>{
+     return  this.getData(`${SERVER}/tv/airing_today?api_key=${API_KEY}&language=ru-RU&page=1`);}
+  getNextWeek=()=>{
+     return this.getData(`${SERVER}/tv/on_the_air?api_key=${API_KEY}&language=ru-RU&page=1`);}
 
-};
+}
+const dbService= new DBService();
 
+const renderCard=(response,target)=>{
+     tvShowList.textContent=" ";
 
+     if(!response.total_results){
+        loading.remove();
+        tvShowsHead.textContent='По вашему запросу ничего не найдено...'
+        tvShowsHead.style.cssText='color:red';
+        return;
+     }
+     tvShowsHead.textContent= target?target.textContent: 'Результат  поиска:'
+     tvShowsHead.style.cssText='color:black';
 
-const renderCard=(response)=>{
-     tvShowList.textContent='';
-    response.results.forEach(item => {
-
+    response.results.forEach(item => {        
         const {
             backdrop_path:backdrop,
               name:title,
@@ -90,7 +112,7 @@ searchForm.addEventListener('submit', (event)=>{
     const value=searchFormInput.value.trim();
     if(value){
     tvShows.append(loading);
-    new DBService().getSearchResult(value).then(renderCard);
+  dbService.getSearchResult(value).then(renderCard);
     }
     searchFormInput.value='';
 });
@@ -127,7 +149,24 @@ document.addEventListener('click',(event)=>{
             leftMenu.classList.add('openMenu');
             hamburger.classList.add('open');
         }
+
+            if(target.closest('#top-rated')){
+            dbService.getTopRated().then((response)=>renderCard(response,target));
+            }
+            if(target.closest('#popular')){
+                dbService.getPopular().then((response)=>renderCard(response,target));
+            }
+            if(target.closest('#week')){
+                dbService.getNextWeek().then((response)=>renderCard(response,target));
+            }
+            if(target.closest('#today')){
+                dbService.getToday().then((response)=>renderCard(response,target));
+            }
 });
+
+
+
+
 
 // открытие модального окна
  tvShowList.addEventListener('click',(event)=>{
@@ -137,11 +176,18 @@ document.addEventListener('click',(event)=>{
      const card =target.closest('.tv-card');
      if(card){
          preloader.style.display="block";
-          new DBService().getTvShow(card.id)
+          dbService.getTvShow(card.id)
              .then(data=>{
-                 console.log(data);
-                 tvCardImg.src = IMG_URL + data.poster_path;
-                 tvCardImg.alt=data.name;
+                 if(data.poster_path){
+                    tvCardImg.src = IMG_URL + data.poster_path;
+                    tvCardImg.alt=data.name;
+                    posterWrapper.style.display='';
+                    modalContent.style.paddingLeft='';
+                 }else{
+                     posterWrapper.style.display='none';
+                     modalContent.style.paddingLeft='25px';
+                 }
+                 
                  modalTitle.textContent = data.name;
       // genresList.innerHTML= data.genres.reduce((acc,item)=>`${acc}  <li>${item.name}</li`,'');
                  genresList.textContent='';
@@ -159,7 +205,7 @@ document.addEventListener('click',(event)=>{
           .finally(()=>{
               preloader.style.display='none';
           })
-     }
+     } 
 
  });
  //закрытие модального окна
