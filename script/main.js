@@ -21,7 +21,8 @@ let leftMenu = document.querySelector('.left-menu'),
     dropdown=document.querySelectorAll('.dropdown'),
     tvShowsHead=document.querySelector('.tv-shows__head'),
     posterWrapper=document.querySelector('.poster__wrapper'),
-    modalContent=document.querySelector('.modal__content');
+    modalContent=document.querySelector('.modal__content'),
+    pagination = document.querySelector('.pagination');
     
 
 const loading=document.createElement('div');
@@ -45,8 +46,12 @@ const DBService=class{
         return this.getData('card.json');
     }
     getSearchResult=(query)=>{
-        return this.getData(`${SERVER}/search/tv?api_key=${API_KEY}&query=${query}&language=ru-RU`);
+        this.temp=`${SERVER}/search/tv?api_key=${API_KEY}&query=${query}&language=ru-RU`;
+        return this.getData(this.temp);
+    }
 
+    getNextPage=(page)=>{       
+        return this.getData(this.temp + '&page=' + page);
     }
     getTvShow=id=>{
         return this.getData(`${SERVER}/tv/${id}?api_key=${API_KEY}&language=ru-RU`);
@@ -58,7 +63,8 @@ const DBService=class{
         return this.getData(`${SERVER}/tv/popular?api_key=${API_KEY}&language=ru-RU&page=1`);
  }
    getToday=()=>{
-     return  this.getData(`${SERVER}/tv/airing_today?api_key=${API_KEY}&language=ru-RU&page=1`);}
+     return  this.getData(`${SERVER}/tv/airing_today?api_key=${API_KEY}&language=ru-RU&page=1`);
+    }
   getNextWeek=()=>{
      return this.getData(`${SERVER}/tv/on_the_air?api_key=${API_KEY}&language=ru-RU&page=1`);}
 
@@ -66,6 +72,7 @@ const DBService=class{
 const dbService= new DBService();
 
 const renderCard=(response,target)=>{
+    
      tvShowList.textContent=" ";
 
      if(!response.total_results){
@@ -105,6 +112,14 @@ const renderCard=(response,target)=>{
         loading.remove();
         tvShowList.append(card);
     });
+     
+    pagination.textContent='';
+
+    if(!target && response.total_pages > 1) {       
+        for( let i=1; i <= response.total_pages; i++) {
+            pagination.innerHTML += `<li><a href="#" class="pages">${i}</a></li>`;
+        }        
+    };
 };
 
 searchForm.addEventListener('submit', (event)=>{
@@ -124,7 +139,7 @@ const closeDropdown=()=>{
     dropdown.forEach(item=>{
        item.classList.remove('active');
     })
-}
+};
 
 hamburger.addEventListener('click',()=>{
    leftMenu.classList.toggle('openMenu');
@@ -162,10 +177,11 @@ document.addEventListener('click',(event)=>{
             if(target.closest('#today')){
                 dbService.getToday().then((response)=>renderCard(response,target));
             }
+            if(target.closest('#search')){
+                tvShowList.textContent="";
+                tvShowsHead.textContent="";
+            }
 });
-
-
-
 
 
 // открытие модального окна
@@ -233,5 +249,14 @@ modal.addEventListener('click',event=>{
 
 
 tvShowList.addEventListener('mouseover',changeImage);
-tvShowList.addEventListener('mouseout',changeImage)
+tvShowList.addEventListener('mouseout',changeImage);
+
+pagination.addEventListener('click', (event)=>{
+    event.preventDefault();
+    const target=event.target;
+    if(target.classList.contains('pages')){
+        tvShows.append(loading);
+    dbService.getNextPage(target.textContent).then(renderCard);
+    }
+})
 
